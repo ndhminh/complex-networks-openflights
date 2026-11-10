@@ -2,19 +2,21 @@ import json
 import pandas as pd
 import networkx as nx
 
+output_file = 'openflights_routes_data.json'
+
 print("1. Loading airports data...")
 airport_cols = [
     'airport_id', 'name', 'city', 'country', 'iata', 'icao', 
     'lat', 'lon', 'altitude', 'timezone', 'dst', 'tz', 'type', 'source'
 ]
-airports_df = pd.read_csv('airports.dat.txt', header=None, names=airport_cols, na_values='\\N')
+airports_df = pd.read_csv('dataset/airports.dat.txt', header=None, names=airport_cols, na_values='\\N')
 airports_df = airports_df.dropna(subset=['iata', 'lat', 'lon'])
 airport_lookup = airports_df.set_index('iata')[['name', 'city', 'country', 'lat', 'lon']].to_dict('index')
 print(f"Loaded {len(airports_df)} valid airports with coordinates.")
 
 print("\n2. Loading raw OpenFlights routes data...")
 route_cols = ['airline', 'airline_id', 'source', 'source_id', 'dest', 'dest_id', 'codeshare', 'stops', 'equipment']
-df = pd.read_csv('routes.dat.txt', header=None, names=route_cols, na_values='\\N')
+df = pd.read_csv('dataset/routes.dat.txt', header=None, names=route_cols, na_values='\\N')
 print(f"Total rows loaded: {len(df)}")
 
 df_clean = df.dropna(subset=['source', 'dest']).copy()
@@ -76,7 +78,7 @@ map_payload = {
     "edges": edges_export
 }
 
-with open('openflights_routes_data.json', 'w', encoding='utf-8') as f:
+with open(output_file, 'w', encoding='utf-8') as f:
     json.dump(map_payload, f, indent=4)
 
-print(f"\nSuccessfully exported {len(nodes_export)} nodes and {len(edges_export)} edges to 'openflights_routes_data.json'!")
+print(f"\nExported {len(nodes_export)} nodes and {len(edges_export)} edges to '{output_file}'")
