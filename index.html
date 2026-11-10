@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0b1020">
+
+    <title>Global Aviation Network | Complex Networks</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+
+    <meta name="description"
+        content="An interactive topological and geographical analysis of the global aviation network using OpenFlights data.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+    <!-- Dashboard CSS -->
+    <link rel="stylesheet" href="./styles.css">
+</head>
+
+<body>
+
+    <div class="app">
+
+        <header>
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                            d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5L21 16z" />
+                    </svg>
+                </div>
+                <div>
+                    <div class="brand-title">COMPLEX NETWORKS</div>
+                    <div class="brand-subtitle">
+                        MIDTERM ANALYSIS · HUST
+                    </div>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <div class="status">
+                    <span class="status-dot"></span>
+                    DATASET LOADED
+                </div>
+                <div>NETWORKX + LEAFLET</div>
+            </div>
+        </header>
+
+        <div class="workspace">
+
+            <!-- LEFT SIDEBAR -->
+            <aside class="sidebar">
+
+                <section class="panel-section">
+                    <div class="section-heading">
+                        <span class="section-title">Network overview</span>
+                    </div>
+
+                    <div class="stat-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Airports · Nodes</div>
+                            <div class="stat-value" id="stat-nodes">—</div>
+                            <div class="stat-description">Final network vertices</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-label">Connections · Edges</div>
+                            <div class="stat-value" id="stat-edges">—</div>
+                            <div class="stat-description">Unique directed routes</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-label">Network density</div>
+                            <div class="stat-value" id="stat-density">—</div>
+                            <div class="stat-description">Directed graph</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-label">Average degree</div>
+                            <div class="stat-value" id="stat-degree">—</div>
+                            <div class="stat-description">In-degree = out-degree</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- AIRPORT SEARCH -->
+                <section class="panel-section">
+                    <div class="section-heading">
+                        <span class="section-title">Airport search</span>
+                    </div>
+
+                    <div class="search-wrap">
+                        <span class="search-icon">⌕</span>
+
+                        <input id="airport-search" class="search-input" type="search"
+                            placeholder="Search airport, city, IATA..." autocomplete="off">
+                    </div>
+
+                    <div id="search-results"></div>
+                </section>
+
+                <!-- TOP HUBS -->
+                <section class="panel-section">
+                    <div class="section-heading">
+                        <span class="section-title">Global network hubs</span>
+                        <span class="section-tag">TOP 10</span>
+                    </div>
+
+                    <div id="hubs-list" class="hub-list">
+                        <div class="empty-state">
+                            Loading airport rankings...
+                        </div>
+                    </div>
+                </section>
+
+                <!-- METHODOLOGY -->
+                <section class="panel-section">
+                    <div class="section-heading">
+                        <span class="section-title">Network methodology</span>
+                    </div>
+
+                    <div class="method-item">
+                        <span>Graph representation</span>
+                        <strong>Directed</strong>
+                    </div>
+
+                    <div class="method-item">
+                        <span>Node definition</span>
+                        <strong>Airport ID</strong>
+                    </div>
+
+                    <div class="method-item">
+                        <span>Edge definition</span>
+                        <strong>Unique connection</strong>
+                    </div>
+
+                    <div class="method-item">
+                        <span>Centrality metric</span>
+                        <strong>Degree</strong>
+                    </div>
+
+                    <div class="method-item">
+                        <span>Self-loops</span>
+                        <strong>Removed</strong>
+                    </div>
+
+                    <div class="method-item">
+                        <span>Isolated nodes</span>
+                        <strong>Removed</strong>
+                    </div>
+                </section>
+
+            </aside>
+
+            <!-- MAP -->
+            <main class="map-area">
+
+                <div id="map"></div>
+
+                <div class="map-legend">
+                    <div style="font-weight:700;color:#dce4f5;margin-bottom:7px">
+                        NODE DEGREE
+                    </div>
+
+                    <div class="legend-row">
+                        <span class="legend-dot" style="width:5px;height:5px"></span>
+                        Lower connectivity
+                    </div>
+
+                    <div class="legend-row">
+                        <span class="legend-dot" style="width:9px;height:9px"></span>
+                        Medium connectivity
+                    </div>
+
+                    <div class="legend-row">
+                        <span class="legend-dot" style="width:14px;height:14px"></span>
+                        Higher connectivity
+                    </div>
+                </div>
+
+                <div class="map-loading" id="map-loading">
+                    Loading aviation network...
+                </div>
+
+            </main>
+
+            <!-- RIGHT INSPECTOR -->
+            <aside class="sidebar right-panel">
+
+                <section class="panel-section">
+                    <div class="section-heading">
+                        <span class="section-title">Airport inspector</span>
+                        <span class="section-tag">SELECTED NODE</span>
+                    </div>
+
+                    <div id="inspector-content">
+                        <div class="empty-state">
+                            Select an airport marker or a hub from the ranking
+                            to inspect its topological properties.
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel-section">
+                    <div class="section-heading">
+                        <span class="section-title">Airport connections</span>
+                        <span class="section-tag">ADJACENCY</span>
+                    </div>
+
+                    <div id="connections-content">
+                        <div class="empty-state">
+                            Select an airport to explore its incoming and
+                            outgoing connections.
+                        </div>
+                    </div>
+                </section>
+
+            </aside>
+
+        </div>
+
+        <footer>
+            <span>OPENFLIGHTS DATASET · HISTORICAL SNAPSHOT · JUNE 2014</span>
+            <span>NETWORK ANALYSIS WITH PYTHON NETWORKX</span>
+        </footer>
+
+    </div>
+
+
+    <!-- ========================================================
+     JAVASCRIPT DEPENDENCIES
+========================================================= -->
+
+    <script src="./config.js"></script>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+
+    <script>
+        "use strict";
+
+
+        // ============================================================
+        // 1. CONFIGURATION VALIDATION
+        // ============================================================
+
+        if (typeof CONFIG === "undefined" || !CONFIG.CARTO_API_KEY) {
+            throw new Error("Missing CARTO_API_KEY in config.js");
+        }
+
+
+        // ============================================================
+        // 2. MAP INITIALIZATION
+        // ============================================================
+
+        const map = L.map("map", {
+            zoomControl: false,
+            preferCanvas: true
+        }).setView([25, 5], 2);
+
+        L.control.zoom({ position: "bottomright" }).addTo(map);
+
+        // CARTO tile URL with API key from config.js.
+        // Keep the provider's required URL format and authentication parameter.
+
+        const tileUrl =
+            `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${encodeURIComponent(CONFIG.CARTO_API_KEY)}`;
+
+        L.tileLayer(tileUrl, {
+            subdomains: "abcd",
+            maxZoom: 18,
+            attribution:
+                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        }).addTo(map);
+
+
+        // ============================================================
+        // 3. GLOBAL STATE
+        // ============================================================
+
+        let nodes = [];
+        let edges = [];
+
+        let nodeById = new Map();
+        let outgoing = new Map();
+        let incoming = new Map();
+        let markers = new Map();
+
+        let selectedAirport = null;
+
+        const markerLayer = L.layerGroup().addTo(map);
+        const routeLayer = L.layerGroup().addTo(map);
+
+        const numberFormat = new Intl.NumberFormat("en-US");
+
+
+        // ============================================================
+        // 4. DATA NORMALIZATION
+        // ============================================================
+
+        function normalizeNode(node) {
+            return {
+                id: String(node.id),
+                name: node.name || "Unknown airport",
+                city: node.city || "Unknown city",
+                country: node.country || "Unknown country",
+                iata: node.IATA || node.iata || "N/A",
+
+                lat: Number(node.latitude ?? node.lat),
+                lon: Number(node.longitude ?? node.lon),
+
+                inDegree: Number(node.in_degree ?? 0),
+                outDegree: Number(node.out_degree ?? 0),
+
+                totalDegree: Number(
+                    node.total_degree ??
+                    ((node.in_degree ?? 0) + (node.out_degree ?? 0))
+                ),
+
+                centrality: Number(
+                    node.degree_centrality ?? node.centrality ?? 0
+                )
+            };
+        }
+
+        function normalizeEdge(edge) {
+            return {
+                source: String(edge.source),
+                destination: String(edge.destination ?? edge.dest),
+                routeRecords: Number(edge.route_records ?? 1),
+                airlineCount: Number(edge.airline_count ?? 0),
+                airlines: edge.airlines || []
+            };
+        }
+
+
+        // ============================================================
+        // 5. LOAD NETWORK DATA
+        // ============================================================
+
+        async function loadNetwork() {
+            try {
+                const response = await fetch("./airport_network.json");
+
+                if (!response.ok) {
+                    throw new Error(
+                        `Cannot load airport_network.json: HTTP ${response.status}`
+                    );
+                }
+
+                const data = await response.json();
+
+                if (!Array.isArray(data.nodes) || !Array.isArray(data.edges)) {
+                    throw new Error(
+                        "Invalid JSON structure. Expected nodes[] and edges[]."
+                    );
+                }
+
+                nodes = data.nodes.map(normalizeNode).filter(node =>
+                    Number.isFinite(node.lat) &&
+                    Number.isFinite(node.lon)
+                );
+
+                edges = data.edges.map(normalizeEdge).filter(edge =>
+                    edge.source && edge.destination
+                );
+
+                initializeIndexes();
+                renderStatistics();
+                renderMap();
+                renderTopHubs();
+
+                document.getElementById("map-loading").style.display = "none";
+
+            } catch (error) {
+                console.error(error);
+
+                document.getElementById("map-loading").innerHTML = `
+            <div style="max-width:340px;text-align:center;padding:20px">
+                <div style="color:#fca5a5;font-weight:700;margin-bottom:8px">
+                    Failed to load network data
+                </div>
+
+                <div style="font-size:11px;line-height:1.7">
+                    ${escapeHTML(error.message)}
+                    <br><br>
+                    Make sure airport_network.json is in the same
+                    directory as index.html.
+                </div>
+            </div>
+        `;
+            }
+        }
+
+
+        // ============================================================
+        // 6. BUILD ADJACENCY INDEXES
+        // ============================================================
+
+        function initializeIndexes() {
+            nodeById = new Map(nodes.map(node => [node.id, node]));
+
+            outgoing = new Map();
+            incoming = new Map();
+
+            nodes.forEach(node => {
+                outgoing.set(node.id, []);
+                incoming.set(node.id, []);
+            });
+
+            edges.forEach(edge => {
+                if (!nodeById.has(edge.source) ||
+                    !nodeById.has(edge.destination)) {
+                    return;
+                }
+
+                outgoing.get(edge.source).push(edge);
+                incoming.get(edge.destination).push(edge);
+            });
+        }
+
+
+        // ============================================================
+        // 7. NETWORK STATISTICS
+        // ============================================================
+
+        function renderStatistics() {
+            const N = nodes.length;
+            const E = edges.length;
+
+            const density = N > 1
+                ? E / (N * (N - 1))
+                : 0;
+
+            const totalDegree = nodes.reduce(
+                (sum, node) => sum + node.totalDegree, 0
+            );
+
+            const averageDegree = N > 0
+                ? totalDegree / N
+                : 0;
+
+            setText("stat-nodes", numberFormat.format(N));
+            setText("stat-edges", numberFormat.format(E));
+            setText("stat-density", (density * 100).toFixed(4) + "%");
+            setText("stat-degree", averageDegree.toFixed(2));
+        }
+
+
+        // ============================================================
+        // 8. MAP RENDERING
+        // ============================================================
+
+        function renderMap() {
+            const maxDegree = Math.max(
+                ...nodes.map(node => node.totalDegree),
+                1
+            );
+
+            nodes.forEach(node => {
+                const normalized = node.totalDegree / maxDegree;
+                const radius = 2.5 + Math.sqrt(normalized) * 7;
+
+                const marker = L.circleMarker(
+                    [node.lat, node.lon],
+                    {
+                        radius,
+                        color: "#dce3ff",
+                        weight: 0.6,
+                        opacity: 0.8,
+                        fillColor: normalized > 0.55
+                            ? "#a5b4fc"
+                            : "#7185d9",
+                        fillOpacity: 0.75
+                    }
+                );
+
+                marker.bindTooltip(
+                    `<strong>${escapeHTML(node.name)}</strong>
+             <br>${escapeHTML(node.iata)} · ${escapeHTML(node.city)}`,
+                    { direction: "top" }
+                );
+
+                marker.on("click", () => selectAirport(node.id));
+
+                marker.addTo(markerLayer);
+                markers.set(node.id, marker);
+            });
+        }
+
+
+        // ============================================================
+        // 9. TOP 10 AIRPORT HUBS
+        // ============================================================
+
+        function renderTopHubs() {
+            const topHubs = [...nodes]
+                .sort((a, b) => b.totalDegree - a.totalDegree)
+                .slice(0, 10);
+
+            const container = document.getElementById("hubs-list");
+            container.replaceChildren();
+
+            const maxDegree = topHubs[0]?.totalDegree || 1;
+
+            topHubs.forEach((node, index) => {
+                const item = document.createElement("button");
+                item.className = "hub-item";
+                item.dataset.id = node.id;
+
+                const percentage = node.totalDegree / maxDegree * 100;
+
+                item.innerHTML = `
+            <span class="hub-rank">
+                ${String(index + 1).padStart(2, "0")}
+            </span>
+
+            <div class="hub-info">
+                <div class="hub-name">
+                    ${escapeHTML(node.city)}
+                    <span style="color:#8b9cff">
+                        (${escapeHTML(node.iata)})
+                    </span>
+                </div>
+
+                <div class="hub-location">
+                    ${escapeHTML(node.name)}
+                </div>
+
+                <div class="hub-bar">
+                    <div class="hub-bar-fill"
+                         style="width:${percentage}%"></div>
+                </div>
+            </div>
+
+            <span class="hub-degree">${node.totalDegree}</span>
+        `;
+
+                item.addEventListener("click", () => selectAirport(node.id));
+
+                container.appendChild(item);
+            });
+        }
+
+
+        // ============================================================
+        // 10. AIRPORT INSPECTOR
+        // ============================================================
+
+        function selectAirport(id) {
+            const node = nodeById.get(String(id));
+
+            if (!node) return;
+
+            selectedAirport = node;
+
+            document.querySelectorAll(".hub-item").forEach(item => {
+                item.classList.toggle("active", item.dataset.id === node.id);
+            });
+
+            renderInspector(node);
+            renderConnections(node);
+            renderSelectedRoutes(node);
+
+            map.flyTo(
+                [node.lat, node.lon],
+                Math.max(map.getZoom(), 4),
+                { duration: 0.9 }
+            );
+        }
+
+        function renderInspector(node) {
+            const container = document.getElementById("inspector-content");
+
+            container.innerHTML = `
+        <div class="airport-name">
+            ${escapeHTML(node.name)}
+        </div>
+
+        <div class="airport-location">
+            ${escapeHTML(node.city)}, ${escapeHTML(node.country)}
+        </div>
+
+        <div class="iata-badge">
+            ${escapeHTML(node.iata)} · ID ${escapeHTML(node.id)}
+        </div>
+
+        <div class="inspector-grid">
+            <div class="metric">
+                <div class="metric-label">IN-DEGREE</div>
+                <div class="metric-value">${node.inDegree}</div>
+            </div>
+
+            <div class="metric">
+                <div class="metric-label">OUT-DEGREE</div>
+                <div class="metric-value">${node.outDegree}</div>
+            </div>
+
+            <div class="metric">
+                <div class="metric-label">TOTAL</div>
+                <div class="metric-value">${node.totalDegree}</div>
+            </div>
+        </div>
+
+        <div class="centrality-value">
+            <div class="centrality-header">
+                <span>Degree centrality</span>
+                <strong class="mono">${node.centrality.toFixed(5)}</strong>
+            </div>
+
+            <div class="centrality-track">
+                <div class="centrality-fill"
+                     style="width:${Math.min(node.centrality / 2 * 100, 100)}%">
+                </div>
+            </div>
+        </div>
+    `;
+        }
+
+
+        // ============================================================
+        // 11. INCOMING AND OUTGOING CONNECTIONS
+        // ============================================================
+
+        function renderConnections(node) {
+            const container = document.getElementById("connections-content");
+
+            const outgoingEdges = outgoing.get(node.id) || [];
+            const incomingEdges = incoming.get(node.id) || [];
+
+            container.innerHTML = `
+        <div class="connection-summary">
+            <div class="connection-count">
+                <span>Outgoing</span>
+                <strong>${outgoingEdges.length}</strong>
+            </div>
+
+            <div class="connection-count">
+                <span>Incoming</span>
+                <strong>${incomingEdges.length}</strong>
+            </div>
+        </div>
+
+        <div class="section-title" style="margin-bottom:9px">
+            Outgoing destinations
+        </div>
+
+        <div class="connection-list" id="outgoing-list"></div>
+
+        <div class="section-title" style="margin:16px 0 9px">
+            Incoming origins
+        </div>
+
+        <div class="connection-list" id="incoming-list"></div>
+    `;
+
+            renderConnectionList(
+                document.getElementById("outgoing-list"),
+                outgoingEdges,
+                "destination"
+            );
+
+            renderConnectionList(
+                document.getElementById("incoming-list"),
+                incomingEdges,
+                "source"
+            );
+        }
+
+        function renderConnectionList(container, connectionEdges, field) {
+            if (!connectionEdges.length) {
+                container.innerHTML =
+                    `<div class="empty-state">No connections found.</div>`;
+                return;
+            }
+
+            connectionEdges
+                .slice()
+                .sort((a, b) => b.routeRecords - a.routeRecords)
+                .slice(0, 30)
+                .forEach(edge => {
+                    const target = nodeById.get(edge[field]);
+
+                    if (!target) return;
+
+                    const item = document.createElement("div");
+                    item.className = "connection-item";
+
+                    item.innerHTML = `
+                <div>
+                    <div class="connection-name">
+                        ${escapeHTML(target.city)}
+                    </div>
+
+                    <div class="connection-meta">
+                        ${escapeHTML(target.name)}
+                    </div>
+                </div>
+
+                <div class="connection-code">
+                    ${escapeHTML(target.iata)}
+                </div>
+            `;
+
+                    item.addEventListener("click", () => {
+                        selectAirport(target.id);
+                    });
+
+                    container.appendChild(item);
+                });
+
+            if (connectionEdges.length > 30) {
+                const note = document.createElement("div");
+                note.className = "connection-meta";
+                note.style.padding = "7px";
+                note.textContent =
+                    `Showing 30 of ${connectionEdges.length} connections.`;
+
+                container.appendChild(note);
+            }
+        }
+
+
+        // ============================================================
+        // 12. DISPLAY ROUTES ON THE MAP
+        // ============================================================
+
+        function renderSelectedRoutes(node) {
+            routeLayer.clearLayers();
+
+            const connected = [
+                ...(outgoing.get(node.id) || []),
+                ...(incoming.get(node.id) || [])
+            ];
+
+            connected.slice(0, 150).forEach(edge => {
+                const otherId = edge.source === node.id
+                    ? edge.destination
+                    : edge.source;
+
+                const other = nodeById.get(otherId);
+
+                if (!other) return;
+
+                const isOutgoing = edge.source === node.id;
+
+                const line = L.polyline(
+                    [
+                        [node.lat, node.lon],
+                        [other.lat, other.lon]
+                    ],
+                    {
+                        color: isOutgoing ? "#899bff" : "#45c6a0",
+                        weight: 1.2,
+                        opacity: 0.55,
+                        interactive: false
+                    }
+                );
+
+                routeLayer.addLayer(line);
+            });
+
+            markers.forEach(marker => {
+                marker.setStyle({
+                    color: "#dce3ff",
+                    weight: 0.6,
+                    fillOpacity: 0.75
+                });
+            });
+
+            const selectedMarker = markers.get(node.id);
+
+            if (selectedMarker) {
+                selectedMarker.setStyle({
+                    color: "#ffffff",
+                    weight: 2,
+                    fillColor: "#f0c674",
+                    fillOpacity: 1
+                });
+
+                selectedMarker.bringToFront();
+            }
+        }
+
+
+        // ============================================================
+        // 13. AIRPORT SEARCH
+        // ============================================================
+
+        const searchInput = document.getElementById("airport-search");
+        const searchResults = document.getElementById("search-results");
+
+        searchInput.addEventListener("input", () => {
+            const query = searchInput.value.trim().toLowerCase();
+
+            searchResults.replaceChildren();
+
+            if (query.length < 2) return;
+
+            const matches = nodes
+                .filter(node =>
+                    node.name.toLowerCase().includes(query) ||
+                    node.city.toLowerCase().includes(query) ||
+                    node.country.toLowerCase().includes(query) ||
+                    node.iata.toLowerCase() === query ||
+                    node.id === query
+                )
+                .sort((a, b) => b.totalDegree - a.totalDegree)
+                .slice(0, 8);
+
+            if (!matches.length) {
+                const empty = document.createElement("div");
+                empty.className = "empty-state";
+                empty.textContent = "No matching airports found.";
+                searchResults.appendChild(empty);
+                return;
+            }
+
+            matches.forEach(node => {
+                const item = document.createElement("button");
+                item.className = "hub-item";
+                item.style.marginTop = "6px";
+                item.style.width = "100%";
+
+                item.innerHTML = `
+            <div class="hub-info">
+                <div class="hub-name">
+                    ${escapeHTML(node.name)}
+                </div>
+
+                <div class="hub-location">
+                    ${escapeHTML(node.city)}, ${escapeHTML(node.country)}
+                </div>
+            </div>
+
+            <span class="hub-degree">
+                ${escapeHTML(node.iata)}
+            </span>
+        `;
+
+                item.addEventListener("click", () => {
+                    selectAirport(node.id);
+                    searchInput.value = "";
+                    searchResults.replaceChildren();
+                });
+
+                searchResults.appendChild(item);
+            });
+        });
+
+
+        // ============================================================
+        // 14. UTILITIES
+        // ============================================================
+
+        function setText(id, value) {
+            document.getElementById(id).textContent = value;
+        }
+
+        function escapeHTML(value) {
+            return String(value ?? "").replace(/[&<>"']/g, char => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;"
+            })[char]);
+        }
+
+
+        // ============================================================
+        // 15. START APPLICATION
+        // ============================================================
+
+        loadNetwork();
+
+    </script>
+
+</body>
+
+</html>
