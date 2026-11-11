@@ -1,0 +1,1 @@
+In terminal, run the command 'pip install -r requirements.txt', then 'python main.py' to run the code.
